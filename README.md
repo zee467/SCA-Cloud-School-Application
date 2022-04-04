@@ -25,6 +25,65 @@ https://github.com/she-code-africa/Cloud-School-Program-Assessment/blob/main/Ass
 
 9. Now the pipeline run automatically once new changes are pushed to the repo.
 
+10. To create a simple pipeline for our app, we add a new item to jenkins server and select the pipeline option.
+
+11. And use the pipeline script below:
+
+```
+// All valid declarative pipelines must be enclosed within a pipeline block
+pipeline {
+
+    // specifies where the pipeline would execute in the jenkins environment
+    agent any
+
+    // defining tools to auto-install and put on the PATH
+    tools {
+        // Install the Maven version configured as "MAVEN_HOME" and add it to the path.
+        maven "MAVEN_HOME"
+    }
+
+    // Specifies different segment of the pipeline. Containing a sequence of one or more stage directives
+    stages {
+		stage('Clone the project') {
+			// Get the code from a GitHub repository
+			steps {
+			    git branch: 'main', url: 'https://github.com/zee467/SCA-Cloud-School-Application.git'
+			}
+            
+		}
+		
+		stage('Static Analysis') {
+		    // check code style
+		    steps {
+		        sh "mvn checkstyle:checkstyle"
+		    }
+        }
+		
+        stage('Build') {
+            steps {
+                // Run Maven on a Unix agent.
+                sh "mvn -Dmaven.test.failure.ignore=true clean install"
+            }
+
+            post {
+                // If Maven was able to run the tests, even if some of the test
+                // failed, record the test results and archive the jar file.
+                success {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts 'target/*.jar'
+                }
+            }
+        }
+    }
+}
+```
+
 
 ## Alternative Solution: Git Actions
 - We could achieve similar results with [Git Actions >> Java CI with Maven](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven)
+
+
+## Resources
+- [Pipeline Script](https://www.jenkins.io/doc/book/pipeline/syntax/)
+- [About CI/CD](https://www.guru99.com/ci-cd-pipeline.html)
+- [Maven Lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html#Lifecycle_Reference)
