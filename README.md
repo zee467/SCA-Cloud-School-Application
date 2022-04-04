@@ -44,27 +44,26 @@ pipeline {
 
     // Specifies different segment of the pipeline. Containing a sequence of one or more stage directives
     stages {
-		stage('Clone the project') {
-			// Get the code from a GitHub repository
-			steps {
-			    git branch: 'main', url: 'https://github.com/zee467/SCA-Cloud-School-Application.git'
-			}
-            
+    	stage('Source') {
+		// Get the code from a GitHub repository
+		steps {
+		    git branch: 'main', url: 'https://github.com/zee467/SCA-Cloud-School-Application.git'
 		}
+            
+	}
 		
-		stage('Static Analysis') {
-		    // check code style
-		    steps {
-		        sh "mvn checkstyle:checkstyle"
-		    }
+	stage('Static Analysis') {
+		// check code style
+		steps {
+			sh "mvn checkstyle:checkstyle"
+		}
         }
-		
-        stage('Build') {
+        
+        stage('Test') {
             steps {
-                // Run Maven on a Unix agent.
-                sh "mvn -Dmaven.test.failure.ignore=true clean install"
+                sh "mvn test -Dmaven.test.failure.ignore=true"
             }
-
+            
             post {
                 // If Maven was able to run the tests, even if some of the test
                 // failed, record the test results and archive the jar file.
@@ -73,6 +72,22 @@ pipeline {
                     archiveArtifacts 'target/*.jar'
                 }
             }
+        }
+		
+        stage('Build') {
+            steps {
+                // Run Maven on a Unix agent.
+                sh "mvn clean install"
+            }
+        }
+        
+        stage("Staging") {
+            steps{
+                withEnv(['JENKINS_NODE_COOKIE=dontkill']) {
+                    sh 'nohup ./mvnw spring-boot:run -Dserver.port=8989 &'
+                }
+            }
+                
         }
     }
 }
